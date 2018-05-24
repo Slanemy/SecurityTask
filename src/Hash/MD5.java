@@ -1,6 +1,7 @@
 package Hash;
 
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 public class MD5 {
     //四个32位变量初始值
@@ -119,18 +120,22 @@ public class MD5 {
     /**
      * 外部调用的入口函数
      *
-     * @param inputString 输入的消息值
+     * @param input 输入的消息值
      * @return result 返回MD5结果
      */
-    public String getMD5Str(String inputString) {
+    public byte[] getMD5Str(byte[] input) {
         md5Init();
-        md5Update(inputString.getBytes(), inputString.length());
+        md5Update(input, input.length);
         md5Final();
-        digestHexStr = "";
-        for (int i = 0; i < 16; i++) {
-            digestHexStr += byteHex(digest[i]);
+
+        return digest;
+    }
+
+    private static void printByteArray(byte[] input) {
+        for (int i = 0; i < input.length; i++) {
+            System.out.print(Integer.toHexString(input[i] & 0xff) + " ");
         }
-        return digestHexStr;
+        System.out.println();
     }
 
     /**
@@ -362,43 +367,18 @@ public class MD5 {
     }
 
 
-    public static String MD5(String key) {
-        char hexDigits[] = {
-                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
-        };
-        try {
-            byte[] btInput = key.getBytes();
-            // 获得MD5摘要算法的 MessageDigest 对象
-            MessageDigest mdInst = MessageDigest.getInstance("MD5");
-            // 使用指定的字节更新摘要
-            mdInst.update(btInput);
-            // 获得密文
-            byte[] md = mdInst.digest();
-            // 把密文转换成十六进制的字符串形式
-            int j = md.length;
-            char str[] = new char[j * 2];
-            int k = 0;
-            for (int i = 0; i < j; i++) {
-                byte byte0 = md[i];
-                str[k++] = hexDigits[byte0 >>> 4 & 0xf];
-                str[k++] = hexDigits[byte0 & 0xf];
-            }
-            return new String(str);
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
     /**
      * @param args
      */
-    public static void main(String[] args) {
-        String data = "12";
+    public static void main(String[] args) throws Exception {
+        String data = "assssssssssssss2156ssssssssss./ssssssss中ssssssss撒打算打算到干哈大公鸡噢isad金佛爱神的箭佛牌大家撒房间爱上的开了房间爱快乐圣诞节佛奥倒计时佛教奥德赛佛教大街上反复ISD哈市将打火机ask打火机卡圣诞节卡仕达杰卡斯ssssssss";
+        byte[] test = data.getBytes();
         MD5 md5 = new MD5();
-        System.out.println(md5.getMD5Str(data));
-        String MD5_String;
-        MD5_String = MD5(data);
-        System.out.println(MD5_String);
+        printByteArray(md5.getMD5Str(test));
+
+        MessageDigest mdInst = MessageDigest.getInstance("MD5");
+        mdInst.update(test);
+        printByteArray(mdInst.digest());
 
     }
 
