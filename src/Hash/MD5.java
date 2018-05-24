@@ -1,11 +1,13 @@
 package Hash;
 
+import java.security.MessageDigest;
+
 public class MD5 {
     //四个32位变量初始值
-    private final long A = 0x67452301L;
-    private final long B = 0xefcdab89L;
-    private final long C = 0x98badcfeL;
-    private final long D = 0x10325476L;
+    private long A = 0x67452301L;
+    private long B = 0xefcdab89L;
+    private long C = 0x98badcfeL;
+    private long D = 0x10325476L;
 
     private byte[] buffer = new byte[64]; // 输入缓冲器，即512位一组
 
@@ -117,7 +119,7 @@ public class MD5 {
     /**
      * 外部调用的入口函数
      *
-     * @param inputBytes 输入的消息值
+     * @param inputString 输入的消息值
      * @return result 返回MD5结果
      */
     public String getMD5Str(String inputString) {
@@ -129,6 +131,22 @@ public class MD5 {
             digestHexStr += byteHex(digest[i]);
         }
         return digestHexStr;
+    }
+
+    /**
+     * 将byte类型的数转换为十六进制的ASCII码
+     *
+     * @param ib 输入的byte字符
+     * @return 一个字符
+     */
+    public static String byteHex(byte ib) {
+        char[] Digit = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A',
+                'B', 'C', 'D', 'E', 'F'};
+        char[] ob = new char[2];
+        ob[0] = Digit[(ib >>> 4) & 0X0F];
+        ob[1] = Digit[ib & 0X0F];
+        String s = new String(ob);
+        return s;
     }
 
     /**
@@ -158,7 +176,7 @@ public class MD5 {
      */
     private void md5Update(byte[] inputByte, int inputLen) {
         int i, index, partLen;
-        byte[] block = new byte[64];
+        byte[] group = new byte[64];
         index = (int) (strLength[0] >>> 3) & 0x3F;  //mod 64
         if ((strLength[0] += (inputLen << 3)) < (inputLen << 3))
             strLength[1]++;
@@ -168,13 +186,131 @@ public class MD5 {
             System.arraycopy(inputByte, 0, buffer, index, partLen);
             md5Transform(buffer);
             for (i = partLen; i + 63 < inputLen; i += 64) {
-                System.arraycopy(inputByte, i, block, 0, 64);
-                md5Transform(block);
+                System.arraycopy(inputByte, i, group, 0, 64);
+                md5Transform(group);
             }
             index = 0;
         } else
             i = 0;
         System.arraycopy(inputByte, i, buffer, index, inputLen - i);
+    }
+
+    /**
+     * 四轮变换具体流程
+     *
+     * @param group 分组的原始字节
+     */
+
+    private void md5Transform(byte group[]) {
+        long a = A, b = B, c = C, d = D;
+        long[] x = new long[16];
+
+        Decode(x, group, 64);
+
+        //第一轮
+        a = FF(a, b, c, d, x[0], S11, T[0]);
+        d = FF(d, a, b, c, x[1], S12, T[1]);
+        c = FF(c, d, a, b, x[2], S13, T[2]);
+        b = FF(b, c, d, a, x[3], S14, T[3]);
+        a = FF(a, b, c, d, x[4], S11, T[4]);
+        d = FF(d, a, b, c, x[5], S12, T[5]);
+        c = FF(c, d, a, b, x[6], S13, T[6]);
+        b = FF(b, c, d, a, x[7], S14, T[7]);
+        a = FF(a, b, c, d, x[8], S11, T[8]);
+        d = FF(d, a, b, c, x[9], S12, T[9]);
+        c = FF(c, d, a, b, x[10], S13, T[10]);
+        b = FF(b, c, d, a, x[11], S14, T[11]);
+        a = FF(a, b, c, d, x[12], S11, T[12]);
+        d = FF(d, a, b, c, x[13], S12, T[13]);
+        c = FF(c, d, a, b, x[14], S13, T[14]);
+        b = FF(b, c, d, a, x[15], S14, T[15]);
+
+        //第二轮
+        a = GG(a, b, c, d, x[1], S21, T[16]);
+        d = GG(d, a, b, c, x[6], S22, T[17]);
+        c = GG(c, d, a, b, x[11], S23, T[18]);
+        b = GG(b, c, d, a, x[0], S24, T[19]);
+        a = GG(a, b, c, d, x[5], S21, T[20]);
+        d = GG(d, a, b, c, x[10], S22, T[21]);
+        c = GG(c, d, a, b, x[15], S23, T[22]);
+        b = GG(b, c, d, a, x[4], S24, T[23]);
+        a = GG(a, b, c, d, x[9], S21, T[24]);
+        d = GG(d, a, b, c, x[14], S22, T[25]);
+        c = GG(c, d, a, b, x[3], S23, T[26]);
+        b = GG(b, c, d, a, x[8], S24, T[27]);
+        a = GG(a, b, c, d, x[13], S21, T[28]);
+        d = GG(d, a, b, c, x[2], S22, T[29]);
+        c = GG(c, d, a, b, x[7], S23, T[30]);
+        b = GG(b, c, d, a, x[12], S24, T[31]);
+
+        //第三轮
+        a = HH(a, b, c, d, x[5], S31, T[32]);
+        d = HH(d, a, b, c, x[8], S32, T[33]);
+        c = HH(c, d, a, b, x[11], S33, T[34]);
+        b = HH(b, c, d, a, x[14], S34, T[35]);
+        a = HH(a, b, c, d, x[1], S31, T[36]);
+        d = HH(d, a, b, c, x[4], S32, T[37]);
+        c = HH(c, d, a, b, x[7], S33, T[38]);
+        b = HH(b, c, d, a, x[10], S34, T[39]);
+        a = HH(a, b, c, d, x[13], S31, T[40]);
+        d = HH(d, a, b, c, x[0], S32, T[41]);
+        c = HH(c, d, a, b, x[3], S33, T[42]);
+        b = HH(b, c, d, a, x[6], S34, T[43]);
+        a = HH(a, b, c, d, x[9], S31, T[44]);
+        d = HH(d, a, b, c, x[12], S32, T[45]);
+        c = HH(c, d, a, b, x[15], S33, T[46]);
+        b = HH(b, c, d, a, x[2], S34, T[47]);
+
+        //第四轮
+        a = II(a, b, c, d, x[0], S41, T[48]);
+        d = II(d, a, b, c, x[7], S42, T[49]);
+        c = II(c, d, a, b, x[14], S43, T[50]);
+        b = II(b, c, d, a, x[5], S44, T[51]);
+        a = II(a, b, c, d, x[12], S41, T[52]);
+        d = II(d, a, b, c, x[3], S42, T[53]);
+        c = II(c, d, a, b, x[10], S43, T[54]);
+        b = II(b, c, d, a, x[1], S44, T[55]);
+        a = II(a, b, c, d, x[8], S41, T[56]);
+        d = II(d, a, b, c, x[15], S42, T[57]);
+        c = II(c, d, a, b, x[6], S43, T[58]);
+        b = II(b, c, d, a, x[13], S44, T[59]);
+        a = II(a, b, c, d, x[4], S41, T[60]);
+        d = II(d, a, b, c, x[11], S42, T[61]);
+        c = II(c, d, a, b, x[2], S43, T[62]);
+        b = II(b, c, d, a, x[9], S44, T[63]);
+
+        A += a;
+        B += b;
+        C += c;
+        D += d;
+    }
+
+    /**
+     * 将byte数组合成long数组
+     *
+     * @param output
+     * @param input
+     * @param len
+     */
+    private void Decode(long[] output, byte[] input, int len) {
+        int i, j;
+        for (i = 0, j = 0; j < len; i++, j += 4) {
+            output[i] = b2iu(input[j]) | (b2iu(input[j + 1]) << 8)
+                    | (b2iu(input[j + 2]) << 16) | (b2iu(input[j + 3]) << 24);
+        }
+        return;
+    }
+
+    /**
+     * 将带符号数转换成不考虑符号的long
+     *
+     * @param b
+     * @return
+     */
+
+    public static long b2iu(byte b) {
+
+        return b < 0 ? b & 0x7F + 128 : b;
     }
 
 
@@ -196,16 +332,74 @@ public class MD5 {
         // /* Append length (before padding) */
         md5Update(bits, 8);
 
+        long[] state = new long[4];
+        state[0] = A;
+        state[1] = B;
+        state[2] = C;
+        state[3] = D;
         // /* Store state in digest */
         Encode(digest, state, 16);
 
     }
 
+    /**
+     * 将long数组拆分为byte数组
+     *
+     * @param output
+     * @param input
+     * @param len
+     */
+
+    private void Encode(byte[] output, long[] input, int len) {
+        int i, j;
+
+        for (i = 0, j = 0; j < len; i++, j += 4) {
+            output[j] = (byte) (input[i] & 0xffL);
+            output[j + 1] = (byte) ((input[i] >>> 8) & 0xffL);
+            output[j + 2] = (byte) ((input[i] >>> 16) & 0xffL);
+            output[j + 3] = (byte) ((input[i] >>> 24) & 0xffL);
+        }
+    }
+
+
+    public static String MD5(String key) {
+        char hexDigits[] = {
+                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
+        };
+        try {
+            byte[] btInput = key.getBytes();
+            // 获得MD5摘要算法的 MessageDigest 对象
+            MessageDigest mdInst = MessageDigest.getInstance("MD5");
+            // 使用指定的字节更新摘要
+            mdInst.update(btInput);
+            // 获得密文
+            byte[] md = mdInst.digest();
+            // 把密文转换成十六进制的字符串形式
+            int j = md.length;
+            char str[] = new char[j * 2];
+            int k = 0;
+            for (int i = 0; i < j; i++) {
+                byte byte0 = md[i];
+                str[k++] = hexDigits[byte0 >>> 4 & 0xf];
+                str[k++] = hexDigits[byte0 & 0xf];
+            }
+            return new String(str);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * @param args
+     */
     public static void main(String[] args) {
-        MD5 md = new MD5();
-        String test = new String("abcde");
-        System.out.println(Integer.toHexString(md.T[20]));
-        System.out.println(100 >> 2);
+        String data = "12";
+        MD5 md5 = new MD5();
+        System.out.println(md5.getMD5Str(data));
+        String MD5_String;
+        MD5_String = MD5(data);
+        System.out.println(MD5_String);
+
     }
 
 
