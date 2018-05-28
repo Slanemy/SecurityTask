@@ -1,5 +1,7 @@
 package SymmetricEncryption;
 
+import java.lang.reflect.Array;
+
 public class DES {
 
     private final int IP[] = {
@@ -126,11 +128,11 @@ public class DES {
     public DES(byte[] input, byte[] key, String mode) {
         if (mode.equals("encrypt")) {
             result = encrypt(input, key);
-        }/* else if (mode.equals("decrypt")) {
+        } else if (mode.equals("decrypt")) {
             result = decrypt(input, key);
         } else {
             System.out.println("Please re-input DES mode.");
-        }*/
+        }
     }
 
     private byte[] encrypt(byte[] input, byte key[]) {
@@ -139,17 +141,27 @@ public class DES {
 
         byte[][] key48 = keyGen(key);
 
-        for (int i = 0; i < 16; i++) {
-            System.out.print("K" + i + "= ");
-            printByteArray(key48[i]);
-        }
-
         byte[] iterResult = iteration(M0, key48);
 
         byte[] C = IPInvSubstitute(iterResult);
 
         return C;
 
+    }
+
+    private byte[] decrypt(byte[] input, byte key[]) {
+
+        byte[] C0 = IPSubstitute(input);
+
+        byte[][] key48 = keyGen(key);
+
+        key48 = keyInv(key48);
+
+        byte[] iterResult = iteration(C0, key48);
+
+        byte[] M = IPInvSubstitute(iterResult);
+
+        return M;
     }
 
     private byte[] IPInvSubstitute(byte[] input) {
@@ -166,19 +178,21 @@ public class DES {
             L[i] = M0[i];
             R[i] = M0[i + 4];
         }
+
         for (int i = 0; i < 16; i++) {
-            byte[] nextL = R;
+            byte[] nextL = new byte[4];
+            System.arraycopy(R, 0, nextL, 0, 4);
             byte[] fr = feistel(R, key48[i]);
-            for (int j = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
                 R[j] = (byte) (L[j] ^ fr[j]);
             }
-            L = nextL;
+
+            System.arraycopy(nextL, 0, L, 0, 4);
         }
         for (int i = 0; i < 4; i++) {
             iterResult[i] = R[i];
             iterResult[i + 4] = L[i];
         }
-
         return iterResult;
     }
 
@@ -188,9 +202,10 @@ public class DES {
         for (int i = 0; i < 6; i++) {
             xorResult[i] = (byte) (expandR[i] ^ key[i]);
         }
+
         byte[] fResult = new byte[4];
 
-        int fResultTemp = 0;
+        long fResultTemp = 0;
 
         for (int i = 0; i < 8; i++) {
             int row = getBit(xorResult, 6 * i) << 1 | getBit(xorResult, 6 * i + 5);
@@ -221,6 +236,7 @@ public class DES {
      * @return IP置换结果
      */
     private byte[] IPSubstitute(byte[] input) {
+
         byte[] IPText = new byte[8];
         byteSubstitute(IPText, input, IP);
         return IPText;
@@ -251,9 +267,6 @@ public class DES {
         byte[][] key48 = new byte[16][6];
         byte[] key56 = key64To56(key);
 
-        System.out.print("K+= ");
-        printByteArray(key56);
-
         byte[] key56Bit = new byte[56];
         byte2Bit(key56Bit, key56);
         byte[] C = new byte[28];
@@ -264,11 +277,6 @@ public class DES {
             D[i] = key56Bit[i + 28];
         }
 
-        System.out.print("C0= ");
-        printByteArray(C);
-        System.out.print("D0= ");
-        printByteArray(D);
-
         for (int i = 0; i < 16; i++) {
             if (i == 0 || i == 1 || i == 8 || i == 15) {
                 C = key28ShiftLeft(C, 1);
@@ -277,29 +285,30 @@ public class DES {
                 C = key28ShiftLeft(C, 2);
                 D = key28ShiftLeft(D, 2);
             }
-            System.out.print("C" + (i + 1) + "= ");
-            printByteArray(C);
-            System.out.print("D" + (i + 1) + "= ");
-            printByteArray(D);
             for (int j = 0; j < 28; j++) {
                 key56Bit[j] = C[j];
                 key56Bit[j + 28] = D[j];
             }
             bit2Byte(key56, key56Bit);
             key48[i] = key56To48(key56);
+
         }
 
         return key48;
     }
 
     private byte[] key28ShiftLeft(byte[] input, int offset) {
-        byte[] key28 = new byte[28];
-        int temp = 0;
-        for (int i = 0; i < 28; i++) {
-            temp |= (input[i] << (27 - i));
+        offset = offset % 28;
+        for (int i = 0; i < offset; ++i) {
+            byte temp;
+            temp = input[0];
+            for (int j = 0; j < 27; j++)
+                input[j] = input[j + 1];
+            input[27] = temp;
         }
 
-        return key28;
+
+        return input;
     }
 
     private byte[] key64To56(byte[] key) {
@@ -346,6 +355,16 @@ public class DES {
         }
     }
 
+    private byte[][] keyInv(byte[][] key48) {
+        byte[] tmp = new byte[6];
+        for (int i = 0; i < 8; i++) {
+            System.arraycopy(key48[i], 0, tmp, 0, 6);
+            System.arraycopy(key48[15 - i], 0, key48[i], 0, 6);
+            System.arraycopy(tmp, 0, key48[15 - i], 0, 6);
+        }
+        return key48;
+    }
+
     public static void printByteArray(byte[] input) {
         for (int i = 0; i < input.length; i++) {
             System.out.print(Integer.toHexString(input[i] & 0xff) + " ");
@@ -360,14 +379,20 @@ public class DES {
                 (byte) 0x89, (byte) 0xab, (byte) 0xcd, (byte) 0xef
         };
 
+
         byte[] key = {
                 0x13, 0x34, 0x57, 0x79,
                 (byte) 0x9b, (byte) 0xbc, (byte) 0xdf, (byte) 0xf1
         };
         DES des = new DES(M, key, "encrypt");
-        printByteArray(des.getResult());
-        printByteArray(M);
-        printByteArray(key);
+
+        byte[] C = des.getResult();
+
+        printByteArray(C);
+
+        DES edes = new DES(C, key, "decrypt");
+
+        printByteArray(edes.getResult());
 
 
     }
