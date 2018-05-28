@@ -4,7 +4,8 @@ import java.lang.reflect.Array;
 
 public class DES {
 
-    private final int IP[] = {
+    //IP置换数组
+    private static final int IP[] = {
             58, 50, 42, 34, 26, 18, 10, 2,
             60, 52, 44, 36, 28, 20, 12, 4,
             62, 54, 46, 38, 30, 22, 14, 6,
@@ -15,7 +16,8 @@ public class DES {
             63, 55, 47, 39, 31, 23, 15, 7
     };
 
-    private final int PC1[] = {
+    //PC1置换数组
+    private static final int PC1[] = {
             57, 49, 41, 33, 25, 17, 9, 1,
             58, 50, 42, 34, 26, 18, 10, 2,
             59, 51, 43, 35, 27, 19, 11, 3,
@@ -25,7 +27,8 @@ public class DES {
             29, 21, 13, 5, 28, 20, 12, 4
     };
 
-    private final int PC2[] = {
+    //PC2置换数组
+    private static final int PC2[] = {
             14, 17, 11, 24, 1, 5, 3, 28,
             15, 6, 21, 10, 23, 19, 12, 4,
             26, 8, 16, 7, 27, 20, 13, 2,
@@ -34,7 +37,8 @@ public class DES {
             34, 53, 46, 42, 50, 36, 29, 32
     };
 
-    private final int E[] = {
+    //32bits向48bits扩展数组
+    private static final int E[] = {
             32, 1, 2, 3, 4, 5,
             4, 5, 6, 7, 8, 9,
             8, 9, 10, 11, 12, 13,
@@ -45,7 +49,8 @@ public class DES {
             28, 29, 30, 31, 32, 1
     };
 
-    private final int S[][][] = {
+    //S盒
+    private static final int S[][][] = {
             {
                     {14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7},
                     {0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8},
@@ -96,7 +101,8 @@ public class DES {
             }
     };
 
-    private final int P[] = {
+    //P置换数组
+    private static final int P[] = {
             16, 7, 20, 21,
             29, 12, 28, 17,
             1, 15, 23, 26,
@@ -107,7 +113,8 @@ public class DES {
             22, 11, 4, 25
     };
 
-    private final int IPInv[] = {
+    //IP逆置换数组
+    private static final int IPInv[] = {
             40, 8, 48, 16, 56, 24, 64, 32,
             39, 7, 47, 15, 55, 23, 63, 31,
             38, 6, 46, 14, 54, 22, 62, 30,
@@ -118,30 +125,48 @@ public class DES {
             33, 1, 41, 9, 49, 17, 57, 25
     };
 
+    private byte[][] keySub;    //子密钥
 
-    private byte[] result;
+    private byte[] result;      //输出的结果，加密后密文或解密后明文
 
+    /**
+     * 外部函数入口
+     *
+     * @return 加密或解密的结果
+     */
     public byte[] getResult() {
         return result;
     }
 
+    /**
+     * 构造函数
+     *
+     * @param input 输入的64bits明文
+     * @param key   64bits密钥
+     * @param mode  选择加密或解密
+     */
     public DES(byte[] input, byte[] key, String mode) {
+        keySub = keyGen(key);
         if (mode.equals("encrypt")) {
-            result = encrypt(input, key);
+            result = encrypt(input);
         } else if (mode.equals("decrypt")) {
-            result = decrypt(input, key);
+            result = decrypt(input);
         } else {
             System.out.println("Please re-input DES mode.");
         }
     }
 
-    private byte[] encrypt(byte[] input, byte key[]) {
+    /**
+     * DES加密过程
+     *
+     * @param input 待加密64bits明文
+     * @return 64bits密文
+     */
+    private byte[] encrypt(byte[] input) {
 
         byte[] M0 = IPSubstitute(input);
 
-        byte[][] key48 = keyGen(key);
-
-        byte[] iterResult = iteration(M0, key48);
+        byte[] iterResult = iteration(M0, keySub);
 
         byte[] C = IPInvSubstitute(iterResult);
 
@@ -149,13 +174,17 @@ public class DES {
 
     }
 
-    private byte[] decrypt(byte[] input, byte key[]) {
+    /**
+     * DES解密过程
+     *
+     * @param input 待解密64bits密文
+     * @return 64bits明文
+     */
+    private byte[] decrypt(byte[] input) {
 
         byte[] C0 = IPSubstitute(input);
 
-        byte[][] key48 = keyGen(key);
-
-        key48 = keyInv(key48);
+        byte[][] key48 = keyInv(keySub);
 
         byte[] iterResult = iteration(C0, key48);
 
@@ -164,12 +193,25 @@ public class DES {
         return M;
     }
 
+    /**
+     * IP逆置换
+     *
+     * @param input 64bits数据
+     * @return 置换后64bits数据
+     */
     private byte[] IPInvSubstitute(byte[] input) {
         byte[] C = new byte[8];
         byteSubstitute(C, input, IPInv);
         return C;
     }
 
+    /**
+     * 主迭代过程，包括分成左右各32bits，再进行16轮Feistel迭代
+     *
+     * @param M0 输入的IP置换后的64bits数据
+     * @param key48 子密钥
+     * @return 64bits迭代结果
+     */
     private byte[] iteration(byte[] M0, byte[][] key48) {
         byte[] L = new byte[4];
         byte[] R = new byte[4];
@@ -183,11 +225,13 @@ public class DES {
             byte[] nextL = new byte[4];
             System.arraycopy(R, 0, nextL, 0, 4);
             byte[] fr = feistel(R, key48[i]);
+
             for (int j = 0; j < 4; j++) {
                 R[j] = (byte) (L[j] ^ fr[j]);
             }
 
             System.arraycopy(nextL, 0, L, 0, 4);
+
         }
         for (int i = 0; i < 4; i++) {
             iterResult[i] = R[i];
@@ -196,6 +240,12 @@ public class DES {
         return iterResult;
     }
 
+    /**
+     * Feistel函数，先将32bits扩展成48bits，再与子密钥异或，再通过S盒，最后进行P置换
+     * @param input 输入当前轮右边32bits
+     * @param key 当前轮子密钥
+     * @return
+     */
     private byte[] feistel(byte[] input, byte[] key) {
         byte[] expandR = expand32To48(input);
         byte[] xorResult = new byte[6];
@@ -220,9 +270,15 @@ public class DES {
 
         fResult = PSubstitute(fResult);
 
+
         return fResult;
     }
 
+    /**
+     * 将32bits扩展置换成48bits
+     * @param input 32bits输入
+     * @return 48bits输出
+     */
     private byte[] expand32To48(byte[] input) {
         byte[] expand = new byte[6];
         byteSubstitute(expand, input, E);
@@ -232,8 +288,8 @@ public class DES {
     /**
      * 初始IP置换
      *
-     * @param input 输入的64位明文
-     * @return IP置换结果
+     * @param input 输入的64bits明文
+     * @return IP置换64bits结果
      */
     private byte[] IPSubstitute(byte[] input) {
 
@@ -242,6 +298,11 @@ public class DES {
         return IPText;
     }
 
+    /**
+     * P置换
+     * @param input 32bits输入
+     * @return 32bit输出
+     */
     private byte[] PSubstitute(byte[] input) {
         byte[] PText = new byte[4];
         byteSubstitute(PText, input, P);
@@ -255,7 +316,7 @@ public class DES {
      * @param position
      * @return 该位比特值
      */
-    private byte getBit(byte[] input, int position) {
+    private static byte getBit(byte[] input, int position) {
         int bitPos = position % 8;
         int len = position / 8;
         byte re;
@@ -263,6 +324,11 @@ public class DES {
         return re;
     }
 
+    /**
+     * 生成16轮子密钥，先将密钥压缩为56位，再通过分组移位等操作生成16组48位子密钥
+     * @param key 用户输入密钥
+     * @return 16轮子密钥
+     */
     private byte[][] keyGen(byte[] key) {
         byte[][] key48 = new byte[16][6];
         byte[] key56 = key64To56(key);
@@ -297,6 +363,12 @@ public class DES {
         return key48;
     }
 
+    /**
+     * 28bits数据循环左移函数
+     * @param input 28bits
+     * @param offset 移动位数
+     * @return
+     */
     private byte[] key28ShiftLeft(byte[] input, int offset) {
         offset = offset % 28;
         for (int i = 0; i < offset; ++i) {
@@ -311,18 +383,34 @@ public class DES {
         return input;
     }
 
+    /**
+     * PC1密钥压缩
+     * @param key 64bits
+     * @return 56bits
+     */
     private byte[] key64To56(byte[] key) {
         byte[] key56 = new byte[7];
         byteSubstitute(key56, key, PC1);
         return key56;
     }
 
+    /**
+     * PC2密钥压缩
+     * @param key 56bits
+     * @return 48bits
+     */
     private byte[] key56To48(byte[] key) {
         byte[] key48 = new byte[6];
         byteSubstitute(key48, key, PC2);
         return key48;
     }
 
+    /**
+     * IP、IP逆、PC1、PC2等置换主过程
+     * @param output 置换后的结果
+     * @param input 待置换数据
+     * @param subArr 置换矩阵
+     */
     private void byteSubstitute(byte[] output, byte[] input, int[] subArr) {
         for (int i = 0; i < output.length; i++) {
             output[i] = (byte) ((getBit(input, subArr[i * 8] - 1)) << 7);
@@ -336,13 +424,23 @@ public class DES {
         }
     }
 
-    private void byte2Bit(byte[] output, byte[] input) {
+    /**
+     * 字节数组拆分每一位为一个字节数组元素
+     * @param output 输出的“位”数组
+     * @param input 输入的字节数组
+     */
+    private static void byte2Bit(byte[] output, byte[] input) {
         for (int i = 0; i < output.length; i++) {
             output[i] = getBit(input, i);
         }
     }
 
-    private void bit2Byte(byte[] output, byte[] input) {
+    /**
+     * “位”数组合成字节数组
+     * @param output 输出的字节数组
+     * @param input 输入的“位”数组
+     */
+    private static void bit2Byte(byte[] output, byte[] input) {
         for (int i = 0; i < output.length; i++) {
             output[i] = (byte) (input[i * 8] << 7);
             output[i] += input[i * 8 + 1] << 6;
@@ -355,6 +453,11 @@ public class DES {
         }
     }
 
+    /**
+     * 解密过程中的密钥置换
+     * @param key48 16轮子密钥
+     * @return 置换后的16轮子密钥
+     */
     private byte[][] keyInv(byte[][] key48) {
         byte[] tmp = new byte[6];
         for (int i = 0; i < 8; i++) {
