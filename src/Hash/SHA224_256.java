@@ -36,6 +36,10 @@ public class SHA224_256 {
             0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
     };
 
+    private static final int ROUND = 64; // 轮数
+
+    private static final int STR_LEN = 64; // 块长度
+
 
     private int digestLen;  // 消息摘要长度
 
@@ -204,8 +208,8 @@ public class SHA224_256 {
             System.out.println("Please re-input SHA mode.");
         }
         state = new int[8];
-        temp = new int[64];
-        buffer = new byte[64];
+        temp = new int[ROUND];
+        buffer = new byte[STR_LEN];
         reset();
     }
 
@@ -273,19 +277,19 @@ public class SHA224_256 {
             offset += n;
             bufferOffset += n;
             length -= n;
-            if (bufferOffset >= 64) {
+            if (bufferOffset >= STR_LEN) {
                 SHATransform(buffer, 0);
                 bufferOffset = 0;
             }
         }
-        if (length > 64) {
+        if (length > STR_LEN) {
             int i;
-            for (i = 0; i < (length / 64); i++) {
-                SHATransform(input, offset + i * 64);
+            for (i = 0; i < (length / STR_LEN); i++) {
+                SHATransform(input, offset + i * STR_LEN);
             }
             bufferOffset = 0;
-            offset += i * 64;
-            length -= i * 64;
+            offset += i * STR_LEN;
+            length -= i * STR_LEN;
         }
         if (length > 0) {
             System.arraycopy(input, offset, buffer, bufferOffset, length);
@@ -301,7 +305,7 @@ public class SHA224_256 {
      */
     private void SHATransform(byte[] input, int offset) {
         decode(input, offset, temp, 0, 16);
-        for (int i = 16; i < 64; i++) {
+        for (int i = 16; i < ROUND; i++) {
             temp[i] = sSig1(temp[i - 2]) + temp[i - 7] + sSig0(temp[i - 15]) + temp[i - 16];
         }
         int a = state[0];
@@ -312,7 +316,7 @@ public class SHA224_256 {
         int f = state[5];
         int g = state[6];
         int h = state[7];
-        for (int i = 0; i < 64; i++) {
+        for (int i = 0; i < ROUND; i++) {
             int temp1 = h + bSig1(e) + ch(e, f, g) + K[i] + temp[i];
             int temp2 = bSig0(a) + maj(a, b, c);
             h = g;
