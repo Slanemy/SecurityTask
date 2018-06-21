@@ -275,8 +275,8 @@ public class SHA224_256 {
             int n = Math.min(length, buffer.length - bufferOffset);
             System.arraycopy(input, offset, buffer, bufferOffset, n);
             offset += n;
-            bufferOffset += n;
             length -= n;
+            bufferOffset += n;
             if (bufferOffset >= STR_LEN) {
                 SHATransform(buffer, 0);
                 bufferOffset = 0;
@@ -288,8 +288,8 @@ public class SHA224_256 {
                 SHATransform(input, offset + i * STR_LEN);
             }
             bufferOffset = 0;
-            offset += i * STR_LEN;
             length -= i * STR_LEN;
+            offset += i * STR_LEN;
         }
         if (length > 0) {
             System.arraycopy(input, offset, buffer, bufferOffset, length);

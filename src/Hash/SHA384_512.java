@@ -83,9 +83,9 @@ public class SHA384_512 {
     /**
      * 逻辑右移
      *
-     * @param bits
-     * @param word
-     * @return
+     * @param bits 移动位数
+     * @param word 待移位输入
+     * @return 返回移位结果
      */
     private static long shiftR(int bits, long word) {
         return word >>> bits;
@@ -94,9 +94,9 @@ public class SHA384_512 {
     /**
      * 循环右移
      *
-     * @param bits
-     * @param word
-     * @return
+     * @param bits 移动位数
+     * @param word 待移位输入
+     * @return 返回移位结果
      */
     private static long rotR(int bits, long word) {
         return (word >>> bits) | (word << (64 - bits));
@@ -369,14 +369,16 @@ public class SHA384_512 {
         byte[] test = data.getBytes();
         SHA384_512 sha384 = new SHA384_512("SHA384");
         SHA384_512 sha512 = new SHA384_512("SHA512");
-        printByteArray(sha384.getSHAStr(data.getBytes()));
-        printByteArray(sha512.getSHAStr(data.getBytes()));
+
+
 
         MessageDigest ssha384 = MessageDigest.getInstance("sha-384");
         MessageDigest ssha512 = MessageDigest.getInstance("sha-512");
         ssha384.update(test);
+        printByteArray(sha384.getSHAStr(data.getBytes()));
         printByteArray(ssha384.digest());
         ssha512.update(test);
+        printByteArray(sha512.getSHAStr(data.getBytes()));
         printByteArray(ssha512.digest());
     }
 }
