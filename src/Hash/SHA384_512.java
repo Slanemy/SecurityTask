@@ -234,36 +234,27 @@ public class SHA384_512 {
         state = new long[8];
         temp = new long[ROUND];
         buffer = new byte[STR_LEN];
-        reset();
+        SHAInit();
     }
 
-    private void reset() {
+    private void SHAInit() {
         System.arraycopy(initState, 0, state, 0, 8);
         byteProcessed = BigInteger.ZERO;
         bufferOffset = 0;
     }
 
-    /**
-     * 外部调用的入口函数
-     *
-     * @param input 输入的消息值
-     * @return result 返回MD5结果
-     */
-    public byte[] getSHAStr(byte[] input) {
-        byte[] digest = new byte[digestLen];
-
+    public void update(byte[] input) {
         SHAUpdate(input, 0, input.length);
-        SHAFinal(digest);
-
-        return digest;
     }
 
     /**
-     * 转换输出
+     * 外部调用的入口函数
      *
-     * @param digest
+     * @return result 返回MD5结果
      */
-    private void SHAFinal(byte[] digest) {
+    public byte[] getSHAStr() {
+        byte[] digest = new byte[digestLen];
+
         BigInteger bitsProcessed = byteProcessed.shiftLeft(3);
         BigInteger mask = new BigInteger(Integer.toString(0x7f));
         int index = byteProcessed.and(mask).intValue();
@@ -278,8 +269,11 @@ public class SHA384_512 {
         SHATransform(buffer, 0);
 
         encode(state, 0, digest, 0, digestLen);
-        reset();
+        SHAInit();
+
+        return digest;
     }
+
 
     /**
      * SHA主循环
@@ -369,16 +363,16 @@ public class SHA384_512 {
         byte[] test = data.getBytes();
         SHA384_512 sha384 = new SHA384_512("SHA384");
         SHA384_512 sha512 = new SHA384_512("SHA512");
-
-
+        sha384.update(test);
+        sha512.update(test);
 
         MessageDigest ssha384 = MessageDigest.getInstance("sha-384");
         MessageDigest ssha512 = MessageDigest.getInstance("sha-512");
         ssha384.update(test);
-        printByteArray(sha384.getSHAStr(data.getBytes()));
+        printByteArray(sha384.getSHAStr());
         printByteArray(ssha384.digest());
         ssha512.update(test);
-        printByteArray(sha512.getSHAStr(data.getBytes()));
+        printByteArray(sha512.getSHAStr());
         printByteArray(ssha512.digest());
     }
 }

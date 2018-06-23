@@ -198,48 +198,40 @@ public class SHA224_256 {
      * @param mode
      */
     private SHA224_256(String mode) {
-        if(mode.equals("SHA224")){
+        if (mode.equals("SHA224")) {
             digestLen = 28;
             initState = SHA224H0;
-        }else if (mode.equals("SHA256")){
+        } else if (mode.equals("SHA256")) {
             digestLen = 32;
             initState = SHA256H0;
-        }else{
+        } else {
             System.out.println("Please re-input SHA mode.");
         }
         state = new int[8];
         temp = new int[ROUND];
         buffer = new byte[STR_LEN];
-        reset();
+        SHAInit();
     }
 
-    private void reset() {
+    private void SHAInit() {
         System.arraycopy(initState, 0, state, 0, 8);
         byteProcessed = 0;
         bufferOffset = 0;
     }
 
-    /**
-     * 外部调用的入口函数
-     *
-     * @param input 输入的消息值
-     * @return result 返回MD5结果
-     */
-    public byte[] getSHAStr(byte[] input) {
-        byte[] digest = new byte[digestLen];
-
+    public void update(byte[] input) {
         SHAUpdate(input, 0, input.length);
-        SHAFinal(digest);
-
-        return digest;
     }
 
     /**
-     * 转换输出
+     * 外部调用的入口函数
      *
-     * @param digest
+     *
+     * @return result 返回MD5结果
      */
-    private void SHAFinal(byte[] digest) {
+    public byte[] getSHAStr() {
+        byte[] digest = new byte[digestLen];
+
         long bitsProcessed = byteProcessed << 3;
         int index = (int) byteProcessed & 0x3f;
         int padLen = (index < 56) ? (56 - index) : (120 - index);
@@ -250,7 +242,9 @@ public class SHA224_256 {
         SHATransform(buffer, 0);
 
         encode(state, 0, digest, 0, digestLen);
-        reset();
+        SHAInit();
+
+        return digest;
     }
 
     /**
@@ -268,7 +262,7 @@ public class SHA224_256 {
             throw new ArrayIndexOutOfBoundsException();
         }
         if (byteProcessed < 0) {
-            reset();
+            SHAInit();
         }
         byteProcessed += length;
         if (bufferOffset != 0) {
@@ -343,8 +337,10 @@ public class SHA224_256 {
         byte[] test = data.getBytes();
         SHA224_256 sha224 = new SHA224_256("SHA224");
         SHA224_256 sha256 = new SHA224_256("SHA256");
-        printByteArray(sha224.getSHAStr(data.getBytes()));
-        printByteArray(sha256.getSHAStr(data.getBytes()));
+        sha224.update(test);
+        sha256.update(test);
+        printByteArray(sha224.getSHAStr());
+        printByteArray(sha256.getSHAStr());
 
         //MessageDigest ssha224 = MessageDigest.getInstance("sha-224");
         MessageDigest ssha256 = MessageDigest.getInstance("sha-256");

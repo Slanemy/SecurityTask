@@ -1,5 +1,7 @@
 package Hash;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -373,8 +375,13 @@ public class MD5 {
     public static void main(String[] args) throws Exception {
         String data = "assssssssssssss2156ssssssssss./ssssssss中ssssssss撒打算打算到干哈大公鸡噢isad金佛爱神的箭佛牌大家撒房间爱上的开了房间爱快乐圣诞节佛奥倒计时佛教奥德赛佛教大街上反复ISD哈市将打火机ask打火机卡圣诞节卡仕达杰卡斯ssssssss";
         byte[] test = data.getBytes();
+        File file = new File("C:\\Users\\Netherspite\\Desktop\\rfc2313.pdf");
+        FileInputStream in = new FileInputStream(file);
+        byte[] buffer = new byte[2048];
         MD5 md5 = new MD5();
         printByteArray(md5.getMD5Str(test));
+
+
 
         MessageDigest mdInst = MessageDigest.getInstance("MD5");
         mdInst.update(test);

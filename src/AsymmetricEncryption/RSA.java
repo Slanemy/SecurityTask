@@ -1,15 +1,12 @@
 package AsymmetricEncryption;
 
-import com.sun.deploy.util.ArrayUtil;
-
-import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Random;
 
 public class RSA {
 
-    private static final int N = 1024;
+
     private static final int BLOCKSIZE = N / 8 - 11;
 
     private static final byte[] PADDINGM01 = {
@@ -21,14 +18,7 @@ public class RSA {
     private byte[] PADDINGM02 = new byte[11];
 
 
-    public BigInteger PU;   //公钥
-    public BigInteger PR;   //私钥
 
-
-    private BigInteger p;   //素数p
-    private BigInteger q;   //素数q
-    private BigInteger phiN;//φ(n)=(p-1)(q-1)
-    public BigInteger n;    //n=pq
 
     private static final BigInteger bigOne = BigInteger.ONE;    //大整数的数字“1”
 
@@ -38,12 +28,24 @@ public class RSA {
      * 构造函数，生成素数p,q,大整数n及其欧拉函数
      */
     public RSA() {
-        p = BigInteger.probablePrime(N, random);
-        q = BigInteger.probablePrime(N, random);
-        n = p.multiply(q);
-        phiN = (p.subtract(bigOne)).multiply(q.subtract(bigOne));
 
+        int pLen = (N + 1) >> 1;
+        int qLen = N - pLen;
+
+        p = BigInteger.probablePrime(pLen, random);
         PU = new BigInteger("65537");
+        while (true) {
+            q = BigInteger.probablePrime(qLen, random);
+            n = p.multiply(q);
+            if (n.bitLength() > N) {
+                continue;
+            }
+            phiN = (p.subtract(bigOne)).multiply(q.subtract(bigOne));
+            if (PU.gcd(phiN).equals(bigOne)) {
+                break;
+            }
+        }
+
         PR = PU.modInverse(phiN);
 
     }
@@ -56,9 +58,9 @@ public class RSA {
      * @return 密文
      */
     public byte[] encrypt(byte[] input, String mode) {
-        int partLen = input.length;
-        int offset = 0;
+        int inputLen = input.length;
         BigInteger tempKey = BigInteger.ZERO;
+        byte[] tempInput = new byte[inputLen + 11];
         byte[] output;
         if (mode.equals("public")) {
             PADDINGM02[0] = 0x00;
@@ -69,38 +71,47 @@ public class RSA {
             System.arraycopy(temp, 0, PADDINGM02, 2, 8);
             PADDINGM02[10] = 0x00;
 
+            System.arraycopy(PADDINGM02, 0, tempInput, 0, 11);
             tempKey = PU;
         } else if (mode.equals("private")) {
+            System.arraycopy(PADDINGM01, 0, tempInput, 0, 11);
             tempKey = PR;
         }
-        for (int i = 0; partLen > 0; i++) {
-            byte[] cache = new byte[BLOCKSIZE + 11];
-            if (partLen < BLOCKSIZE) {
-                byte[] temp = new byte[input.length + 1];
-                System.arraycopy(input, 0, temp, 1, input.length);
-                temp[0] = 0x00;
-                BigInteger message = new BigInteger(temp);
 
-            }
+        System.arraycopy(input, 0, tempInput, 11, inputLen);
 
-        }
+        BigInteger message = new BigInteger(tempInput);
+        output = message.modPow(tempKey, n).toByteArray();
 
-        return new byte[1];
-
+        return output;
 
     }
 
     /**
-     * 解密函数，去除为了防止产生负数在输入的字节数组补上的0x01
+     * 解密函数
      *
      * @param input 密文
      * @return 明文
      */
-    public byte[] decrypt(byte[] input) {
+    public byte[] decrypt(byte[] input, String mode) {
         BigInteger cipher = new BigInteger(input);
-        byte[] temp = cipher.modPow(PR, n).toByteArray();
-        byte[] output = new byte[temp.length - 1];
-        System.arraycopy(temp, 1, output, 0, temp.length - 1);
+
+        byte[] temp = {};
+        if (mode.equals("public")) {
+            temp = cipher.modPow(PR, n).toByteArray();
+            if (temp[0] != 0x02) {
+                System.out.println("Error");
+            }
+        } else if (mode.equals("private")) {
+            temp = cipher.modPow(PU, n).toByteArray();
+            if (temp[0] != 0x01) {
+                System.out.println("Error");
+            }
+        }
+
+        byte[] output = new byte[temp.length - 10];
+
+        System.arraycopy(temp, 10, output, 0, temp.length - 10);
         return output;
     }
 
@@ -112,18 +123,20 @@ public class RSA {
     }
 
     public static void main(String[] args) throws Exception {
-        RSA test = new RSA();
-        BigInteger e = new BigInteger("65537");
-        String data = "assssssssssssss2156ssssssssss./ssssssss中ssssssss撒打算打算到干哈大公鸡噢isad金佛爱神的箭佛牌大家撒房间爱上的开了房间爱快乐圣诞节佛奥倒计时佛教奥德赛佛教大街上反复ISD哈市将打火机ask打火机卡圣诞节卡仕达杰卡斯ssssssss";
+        RSA rsa = new RSA();
+        String data = "1024位的证书，加密时最大支持117个字节，解密时为128；";
+        byte[] test = data.getBytes();
+        System.out.println(test.length);
         System.out.print("message:");
-        printByteArray(data.getBytes());
-        byte[] cipher = test.encrypt(data.getBytes());
+        printByteArray(test);
+        byte[] cipher = rsa.encrypt(test, "private");
         System.out.print("cipher:");
         printByteArray(cipher);
-        byte[] message = test.decrypt(cipher);
+        byte[] message = rsa.decrypt(cipher, "private");
         System.out.print("message:");
         String t = new String(message);
         printByteArray(message);
         System.out.println(t);
+
     }
 }
