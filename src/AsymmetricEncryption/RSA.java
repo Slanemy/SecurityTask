@@ -2,7 +2,7 @@ package AsymmetricEncryption;
 
 
 import java.math.BigInteger;
-import java.util.Random;
+import java.security.SecureRandom;
 
 
 public class RSA {
@@ -27,7 +27,7 @@ public class RSA {
      * @param input 明文
      * @return 密文
      */
-    public byte[] encrypt(byte[] input, BigInteger[] key, String mode) {
+    private byte[] encryptCore(byte[] input, BigInteger[] key, String mode) {
         int inputLen = input.length;
         PADDING_LENGTH = BLOCK_SIZE - inputLen;
         PADDING = new byte[PADDING_LENGTH];
@@ -36,10 +36,17 @@ public class RSA {
         if (mode.equals("public")) {
             PADDING[0] = 0x00;
             PADDING[1] = 0x02;
-            byte[] temp = new byte[PADDING_LENGTH - 3];
-            Random r = new Random();
+            int tempLen = PADDING_LENGTH - 3;
+            int index = 2;
+            byte[] temp = new byte[PADDING_LENGTH + 5];  //预留长度防止出现随机数0
+            SecureRandom r = new SecureRandom();
             r.nextBytes(temp);
-            System.arraycopy(temp, 0, PADDING, 2, BLOCK_SIZE - 3 - inputLen);
+            for (int i = 0; i < temp.length && tempLen > 0; i++) {
+                if (temp[i] != 0) {
+                    PADDING[index++] = temp[i];
+                    tempLen--;
+                }
+            }
         } else if (mode.equals("private")) {
             PADDING[0] = 0x00;
             PADDING[1] = 0x01;
@@ -59,10 +66,10 @@ public class RSA {
                 output[i] = 0x00;
             }
             System.arraycopy(tempOutput, 0, output, BLOCK_SIZE - tempOutput.length, tempOutput.length);
-        } else if(tempOutput.length > BLOCK_SIZE){
-            System.arraycopy(tempOutput,1,output,0,BLOCK_SIZE);
-        }else{
-            System.arraycopy(tempOutput,0,output,0,BLOCK_SIZE);
+        } else if (tempOutput.length > BLOCK_SIZE) {
+            System.arraycopy(tempOutput, 1, output, 0, BLOCK_SIZE);
+        } else {
+            System.arraycopy(tempOutput, 0, output, 0, BLOCK_SIZE);
         }
 
         return output;
@@ -75,7 +82,7 @@ public class RSA {
      * @param input 密文
      * @return 明文
      */
-    public byte[] decrypt(byte[] input, BigInteger[] key, String mode) {
+    private byte[] decryptProcess(byte[] input, BigInteger[] key, String mode) {
 
         BigInteger cipher = new BigInteger(1, input);
 
@@ -105,6 +112,53 @@ public class RSA {
         return output;
     }
 
+    public byte[] encrypt(byte[] input, BigInteger[] key, String mode) {
+        BLOCK_SIZE = (int) Math.ceil(key[1].bitLength() / 8);
+
+        int offset = 0;
+        int partLen = BLOCK_SIZE - 11;
+        int len = input.length;
+
+
+        byte[] output = new byte[(BLOCK_SIZE) * (int) Math.ceil((double) len / partLen)];
+
+        for (; len - partLen * offset > 0; offset++) {
+            byte[] tempIn;
+            if (len - partLen * (offset + 1) < 0) {
+                tempIn = new byte[len - partLen * offset];
+                System.arraycopy(input, offset * partLen, tempIn, 0, len - partLen * offset);
+            } else {
+                tempIn = new byte[partLen];
+                System.arraycopy(input, offset * partLen, tempIn, 0, partLen);
+            }
+            byte[] tempO = encryptCore(tempIn, key, mode);
+
+            System.arraycopy(tempO, 0, output, (BLOCK_SIZE) * offset, BLOCK_SIZE);
+        }
+
+        return output;
+    }
+
+    public byte[] decrypt(byte[] input, BigInteger[] key, String mode) {
+        int lenD = input.length / BLOCK_SIZE;
+        byte[] temp = new byte[lenD * BLOCK_SIZE];
+        int realLen = 0;
+        int offSet = 0;
+        for (int i = 0; i < lenD; i++) {
+            byte[] tempIn = new byte[BLOCK_SIZE];
+            System.arraycopy(input, i * (BLOCK_SIZE), tempIn, 0, BLOCK_SIZE);
+
+            byte[] tempO = decryptProcess(tempIn, key, mode);
+            System.arraycopy(tempO, 0, temp, offSet, tempO.length);
+            offSet += tempO.length;
+            realLen += tempO.length;
+        }
+
+        byte[] output = new byte[realLen];
+        System.arraycopy(temp, 0, output, 0, realLen);
+        return output;
+    }
+
     private static void printByteArray(byte[] input) {
         for (int i = 0; i < input.length; i++) {
             System.out.print(Integer.toHexString(input[i] & 0xff) + " ");
@@ -114,7 +168,7 @@ public class RSA {
 
     public static void main(String[] args) throws Exception {
         RSA rsa = new RSA();
-        String data = "1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；";
+        String data = "1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；";
         byte[] test = data.getBytes();
         System.out.print("message:");
         printByteArray(test);
@@ -123,44 +177,12 @@ public class RSA {
         BigInteger[] publicKey = keyPair.getPublic();
         BigInteger[] privateKey = keyPair.getPrivate();
 
-        rsa.BLOCK_SIZE = (int) Math.ceil(publicKey[1].bitLength() / 8);
-
-        int offset = 0;
-        int partLen = rsa.BLOCK_SIZE - 11;
-        int len = test.length;
-
-
-        byte[] cipher = new byte[(rsa.BLOCK_SIZE) * (int) Math.ceil((double) len / partLen)];
-
-        for (; len - partLen * offset > 0; offset++) {
-            byte[] tempIn;
-            if (len - partLen * (offset + 1) < 0) {
-                tempIn = new byte[len - partLen * offset];
-                System.arraycopy(test, offset * partLen, tempIn, 0, len - partLen * offset);
-            } else {
-                tempIn = new byte[partLen];
-                System.arraycopy(test, offset * partLen, tempIn, 0, partLen);
-            }
-            byte[] tempO = rsa.encrypt(tempIn, privateKey, "private");
-
-            System.arraycopy(tempO, 0, cipher, (rsa.BLOCK_SIZE) * offset, rsa.BLOCK_SIZE);
-        }
-
-
-        int lenD = cipher.length / rsa.BLOCK_SIZE;
-        byte[] message = new byte[lenD * rsa.BLOCK_SIZE];
-        int offSet = 0;
-        for (int i = 0; i < lenD; i++) {
-            byte[] tempIn = new byte[rsa.BLOCK_SIZE];
-            System.arraycopy(cipher, i * (rsa.BLOCK_SIZE), tempIn, 0, rsa.BLOCK_SIZE);
-
-            byte[] tempO = rsa.decrypt(tempIn, publicKey, "private");
-            System.arraycopy(tempO, 0,message,offSet,tempO.length);
-            offSet += tempO.length;
-        }
+        byte[] cipher = rsa.encrypt(test, publicKey, "public");
+        byte[] message = rsa.decrypt(cipher, privateKey, "public");
 
         String M = new String(message);
         System.out.println(M);
+        System.out.println(M.equals(data));
 
 
     }
