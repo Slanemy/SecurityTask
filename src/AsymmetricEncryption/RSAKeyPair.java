@@ -35,7 +35,7 @@ public class RSAKeyPair {
         while (true) {
             q = BigInteger.probablePrime(qLen, random);
             n = p.multiply(q);
-            if (n.bitLength() > keyLength) {
+            if (n.bitLength() < keyLength) {
                 continue;
             }
             phiN = (p.subtract(bigOne)).multiply(q.subtract(bigOne));
