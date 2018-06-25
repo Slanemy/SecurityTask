@@ -51,15 +51,8 @@ public class RSA {
         System.arraycopy(PADDING, 0, tempInput, 0, PADDING_LENGTH);
         System.arraycopy(input, 0, tempInput, PADDING_LENGTH, inputLen);
 
-        System.out.print("mingwen");
-        printByteArray(tempInput);
-
-        BigInteger message = new BigInteger(tempInput);
+        BigInteger message = new BigInteger(1, tempInput);
         byte[] tempOutput = message.modPow(key[0], key[1]).toByteArray();
-
-        System.out.print("len");
-        System.out.println(tempOutput.length);
-        System.out.println(BLOCK_SIZE);
 
         if (tempOutput.length < BLOCK_SIZE) {
             for (int i = 0; i < BLOCK_SIZE - tempOutput.length; i++) {
@@ -84,7 +77,7 @@ public class RSA {
      */
     public byte[] decrypt(byte[] input, BigInteger[] key, String mode) {
 
-        BigInteger cipher = new BigInteger(input);
+        BigInteger cipher = new BigInteger(1, input);
 
         byte[] temp = cipher.modPow(key[0], key[1]).toByteArray();
 
@@ -105,11 +98,9 @@ public class RSA {
             }
         }
 
-        System.out.print("miwen");
-        printByteArray(temp);
-
         byte[] output = new byte[temp.length - i - 1];
         System.arraycopy(temp, i + 1, output, 0, temp.length - i - 1);
+
 
         return output;
     }
@@ -123,7 +114,7 @@ public class RSA {
 
     public static void main(String[] args) throws Exception {
         RSA rsa = new RSA();
-        String data = "1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；";
+        String data = "1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；";
         byte[] test = data.getBytes();
         System.out.print("message:");
         printByteArray(test);
@@ -154,21 +145,21 @@ public class RSA {
 
             System.arraycopy(tempO, 0, cipher, (rsa.BLOCK_SIZE) * offset, rsa.BLOCK_SIZE);
         }
-        System.out.print("cipher:");
-        printByteArray(cipher);
 
 
         int lenD = cipher.length / rsa.BLOCK_SIZE;
-        String M = "";
+        byte[] message = new byte[lenD * rsa.BLOCK_SIZE];
+        int offSet = 0;
         for (int i = 0; i < lenD; i++) {
             byte[] tempIn = new byte[rsa.BLOCK_SIZE];
             System.arraycopy(cipher, i * (rsa.BLOCK_SIZE), tempIn, 0, rsa.BLOCK_SIZE);
 
             byte[] tempO = rsa.decrypt(tempIn, publicKey, "private");
-            String t = new String(tempO);
-            M += t;
+            System.arraycopy(tempO, 0,message,offSet,tempO.length);
+            offSet += tempO.length;
         }
 
+        String M = new String(message);
         System.out.println(M);
 
 
