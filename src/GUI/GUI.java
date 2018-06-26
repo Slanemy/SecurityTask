@@ -4,6 +4,8 @@ package GUI;
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 
 public class GUI {
@@ -65,7 +67,7 @@ public class GUI {
 
         //选择参数部分
         JPanel setup = new JPanel();
-        setup.setBounds(0, 251, 400, 250);
+        setup.setBounds(0, 251, 400, 280);
         Border setBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),"选择参数");
         setup.setBorder(setBorder);
         contentPane.add(setup);
@@ -143,25 +145,64 @@ public class GUI {
         lblRSA.setBounds(39, LINE_Y + OFFSET_Y * 4, 150, 23);
         setup.add(lblRSA);
 
-        JRadioButton jrb1024 = new JRadioButton("1024",true);
-        jrb1024.setFont(new Font("Time News Roman", Font.PLAIN, 14));
-        jrb1024.setBounds(LINE_X, LINE_Y + OFFSET_Y * 4, 90, 23);
-        JRadioButton jrb2048 = new JRadioButton("2048",false);
-        jrb2048.setFont(new Font("Time News Roman", Font.PLAIN, 14));
-        jrb2048.setBounds(LINE_X + OFFSET_X, LINE_Y + OFFSET_Y * 4, 90, 23);
-        ButtonGroup RSABitsGroup = new ButtonGroup();
-        RSABitsGroup.add(jrb1024);
-        RSABitsGroup.add(jrb2048);
-        setup.add(jrb1024);
-        setup.add(jrb2048);
+        JTextField jtfRSA = new JTextField("200",5);
+        jtfRSA.setBounds(LINE_X,LINE_Y + OFFSET_Y * 4,50,23);
+        setup.add(jtfRSA);
+
+        JLabel lblSeed = new JLabel("选择对称密钥：");
+        lblSeed.setFont(new Font("微软雅黑", Font.PLAIN, 14));
+        lblSeed.setBounds(10, LINE_Y + OFFSET_Y * 5, 150, 23);
+        setup.add(lblSeed);
+
+        final JComboBox<String> jcbSymKey = new JComboBox<>();
+        jcbSymKey.addItem("随机生成");
+        jcbSymKey.addItem("方案一");
+        jcbSymKey.addItem("方案二");
+        jcbSymKey.setBounds(LINE_X,LINE_Y + OFFSET_Y * 5, 150,23);
+        setup.add(jcbSymKey);
+
+
+        final JTextField jtfSymKey = new JTextField("请输入种子");
+        jtfSymKey.setBounds(LINE_X + OFFSET_X + 75,LINE_Y + OFFSET_Y * 5, 100,23);
+        setup.add(jtfSymKey);
+        jtfSymKey.setEnabled(true);
+        jcbSymKey.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                jtfSymKey.setEnabled(jcbSymKey.getSelectedIndex() == 0);
+            }
+        });
+
 
         JButton attrConfirm = new JButton("确定");
-        attrConfirm.setBounds(120,LINE_Y + OFFSET_Y * 5,70,23);
+        attrConfirm.setBounds(120,LINE_Y + OFFSET_Y * 6,70,23);
         setup.add(attrConfirm);
 
         JButton attrReset = new JButton("重置");
-        attrReset.setBounds(220,LINE_Y + OFFSET_Y * 5,70,23);
+        attrReset.setBounds(220,LINE_Y + OFFSET_Y * 6,70,23);
         setup.add(attrReset);
 
+
+
+        //接受方部分
+        JPanel senderB = new JPanel();
+        senderB.setBounds(401, 251, 790, 250);
+        Border setABorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),"接收方B");
+        senderB.setBorder(setABorder);
+        contentPane.add(senderB);
+        senderB.setLayout(null);
+
+        JScrollPane jspB = new JScrollPane();
+        jspB.setBounds(10, LINE_Y, 770, 190);
+        senderB.add(jspB);
+        JTextArea jtaB = new JTextArea();
+        jtaB.setBounds(10, LINE_Y, 770, 190);
+        jspB.setViewportView(jtaB);
+        jtaB.setLineWrap(true);
+        //设置成只读
+        jtaB.setEnabled(false);
+
+
     }
+
 }

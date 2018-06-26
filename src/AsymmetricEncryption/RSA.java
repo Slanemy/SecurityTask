@@ -177,12 +177,31 @@ public class RSA {
         BigInteger[] publicKey = keyPair.getPublic();
         BigInteger[] privateKey = keyPair.getPrivate();
 
-        byte[] cipher = rsa.encrypt(test, publicKey, "public");
-        byte[] message = rsa.decrypt(cipher, privateKey, "public");
+        int count = 0;
+        for (int i = 0; i < 20; i++) {
+            byte[] cipher = rsa.encrypt(test, publicKey, "public");
+            byte[] message = rsa.decrypt(cipher, privateKey, "public");
 
-        String M = new String(message);
-        System.out.println(M);
-        System.out.println(M.equals(data));
+            String M = new String(message);
+            if(M.equals(data)){
+                count++;
+            }
+        }
+
+        System.out.println(count);
+
+        count = 0;
+        for (int i = 0; i < 20; i++) {
+            byte[] cipher = rsa.encrypt(test, privateKey, "private");
+            byte[] message = rsa.decrypt(cipher, publicKey, "private");
+
+            String M = new String(message);
+            if(M.equals(data)){
+                count++;
+            }
+        }
+
+        System.out.println(count);
 
 
     }
