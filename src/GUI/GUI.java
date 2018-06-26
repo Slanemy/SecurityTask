@@ -163,8 +163,11 @@ public class GUI {
         jcbSymKey.setBounds(LINE_X, LINE_Y + OFFSET_Y * 5, 150, 23);
         setup.add(jcbSymKey);
 
-
-        final JTextField jtfSymKey = new JTextField("请输入种子");
+        JLabel lblSymKey = new JLabel("请输入种子");
+        lblSymKey.setFont(new Font("微软雅黑", Font.PLAIN, 10));
+        lblSymKey.setBounds(LINE_X + OFFSET_X + 75, LINE_Y + OFFSET_Y * 4 + 12, 150, 23);
+        setup.add(lblSymKey);
+        final JTextField jtfSymKey = new JTextField();
         jtfSymKey.setBounds(LINE_X + OFFSET_X + 75, LINE_Y + OFFSET_Y * 5, 100, 23);
         setup.add(jtfSymKey);
         jtfSymKey.setEnabled(true);
