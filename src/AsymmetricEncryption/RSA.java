@@ -140,6 +140,7 @@ public class RSA {
     }
 
     public byte[] decrypt(byte[] input, BigInteger[] key, String mode) {
+        BLOCK_SIZE = (int) Math.ceil(key[1].bitLength() / 8);
         int lenD = input.length / BLOCK_SIZE;
         byte[] temp = new byte[lenD * BLOCK_SIZE];
         int realLen = 0;

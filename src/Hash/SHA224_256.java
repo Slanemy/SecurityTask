@@ -197,7 +197,7 @@ public class SHA224_256 {
      *
      * @param mode
      */
-    private SHA224_256(String mode) {
+    public SHA224_256(String mode) {
         if (mode.equals("SHA224")) {
             digestLen = 28;
             initState = SHA224H0;

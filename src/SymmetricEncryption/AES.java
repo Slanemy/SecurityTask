@@ -48,54 +48,112 @@ public class AES {
 
     private byte[][] keySub;    //子密钥
 
-    private byte[] result;      //输出的结果，加密后密文或解密后明文
-
-    public AES(byte[] input, byte[] key, String mode) {
+    public AES(byte[] key) {
         keySub = keyExpansion(key);
-        if (mode.equals("encrypt") || mode.equals("decrypt")) {
-            result = mainProcess(input, mode);
-        } else {
-            System.out.println("Please re-input AES mode.");
-        }
     }
 
-    public byte[] getResult() {
-        return result;
-    }
 
-    private byte[] mainProcess(byte[] input, String mode) {
+    private byte[] encryptCore(byte[] input) {
         byte[] output = {};
         byte[][] tempOutput;
-        if (mode.equals("encrypt")) {
-            output = addRoundKey(input, 0);
-            for (int i = 0; i < 9; i++) {
-                output = subBytes(output, mode);
-                tempOutput = byte16ToByte44(output);
-                tempOutput = shiftRows(tempOutput, mode);
-                tempOutput = mixColumns(tempOutput, mode);
-                output = byte44ToByte16(tempOutput);
-                output = addRoundKey(output, i + 1);
-            }
-            output = subBytes(output, mode);
+        output = addRoundKey(input, 0);
+        for (int i = 0; i < 9; i++) {
+            output = subBytes(output, "encrypt");
             tempOutput = byte16ToByte44(output);
-            tempOutput = shiftRows(tempOutput, mode);
+            tempOutput = shiftRows(tempOutput, "encrypt");
+            tempOutput = mixColumns(tempOutput, "encrypt");
             output = byte44ToByte16(tempOutput);
-            output = addRoundKey(output, 10);
+            output = addRoundKey(output, i + 1);
+        }
+        output = subBytes(output, "encrypt");
+        tempOutput = byte16ToByte44(output);
+        tempOutput = shiftRows(tempOutput, "encrypt");
+        output = byte44ToByte16(tempOutput);
+        output = addRoundKey(output, 10);
+        return output;
+    }
+
+    /**
+     * 采用PKCS7Padding填充方式
+     *
+     * @param input
+     * @return
+     */
+    public byte[] encrypt(byte[] input) {
+        int partLen = 16;
+        int len = input.length;
+        int number = (int) Math.ceil((double) len / partLen);
+        int mod = len % partLen;
+
+        byte[] output;
+        byte[] tempInput;
+        if (mod == 0) {
+            tempInput = new byte[number * partLen + partLen];
+            System.arraycopy(input, 0, tempInput, 0, len);
+            for (int i = 0; i < partLen; i++) {
+                tempInput[len + i] = (byte) partLen;
+            }
+            output = new byte[number * partLen + partLen];
         } else {
-            output = addRoundKey(input, 10);
-            tempOutput = byte16ToByte44(output);
-            for (int i = 0; i < 9; i++) {
-                tempOutput = shiftRows(tempOutput, mode);
-                output = byte44ToByte16(tempOutput);
-                output = subBytes(output, mode);
-                output = addRoundKey(output, 9 - i);
-                tempOutput = byte16ToByte44(output);
-                tempOutput = mixColumns(tempOutput, mode);
+            tempInput = new byte[number * partLen];
+            System.arraycopy(input, 0, tempInput, 0, len);
+            for (int i = 0; i < partLen - mod; i++) {
+                tempInput[len + i] = (byte) (partLen - mod);
             }
-            tempOutput = shiftRows(tempOutput, mode);
+            output = new byte[number * partLen];
+        }
+
+        for (int i = 0; i < (output.length / partLen); i++) {
+            byte[] temp = new byte[partLen];
+            System.arraycopy(tempInput, i * partLen, temp, 0, partLen);
+            System.arraycopy(encryptCore(temp), 0, output, i * partLen, partLen);
+        }
+
+        return output;
+    }
+
+    private byte[] decryptCore(byte[] input) {
+        byte[] output = {};
+        byte[][] tempOutput;
+        output = addRoundKey(input, 10);
+        tempOutput = byte16ToByte44(output);
+        for (int i = 0; i < 9; i++) {
+            tempOutput = shiftRows(tempOutput, "decrypt");
             output = byte44ToByte16(tempOutput);
-            output = subBytes(output, mode);
-            output = addRoundKey(output, 0);
+            output = subBytes(output, "decrypt");
+            output = addRoundKey(output, 9 - i);
+            tempOutput = byte16ToByte44(output);
+            tempOutput = mixColumns(tempOutput, "decrypt");
+        }
+        tempOutput = shiftRows(tempOutput, "decrypt");
+        output = byte44ToByte16(tempOutput);
+        output = subBytes(output, "decrypt");
+        output = addRoundKey(output, 0);
+
+        return output;
+    }
+
+    public byte[] decrypt(byte[] input){
+        int len = input.length;
+        int partLen = 16;
+        int number = len / partLen;
+
+
+        byte[] tempOutput = new byte[len];
+        byte[] output;
+
+        for (int i = 0; i < number; i++) {
+            byte[] temp = new byte[partLen];
+            System.arraycopy(input, i * partLen, temp, 0, partLen);
+            System.arraycopy(decryptCore(temp), 0, tempOutput, i * partLen, partLen);
+        }
+        if (tempOutput[len - 1] == (byte)partLen) {
+            output = new byte[len - partLen];
+            System.arraycopy(tempOutput, 0, output, 0, len - partLen);
+        } else {
+            int x = tempOutput[len - 1];
+            output = new byte[len - x];
+            System.arraycopy(tempOutput, 0, output, 0, len - x);
         }
         return output;
     }
@@ -266,7 +324,7 @@ public class AES {
                 temp[3] = tempByte;
 
                 for (int j = 0; j < 4; j++) {
-                    temp[j] = byteSSubstitute(temp[j],"key");
+                    temp[j] = byteSSubstitute(temp[j], "key");
                 }
 
                 temp[0] = (byte) (temp[0] ^ RC[(i / 4) - 1] & 0xff);
@@ -286,7 +344,7 @@ public class AES {
         int row, col;
         row = (input & 0xf0) >> 4;
         col = input & 0x0f;
-        if (mode.equals("encrypt") ||mode.equals("key")) {
+        if (mode.equals("encrypt") || mode.equals("key")) {
             return (byte) S[row][col];
         } else {
             return (byte) invS[row][col];
@@ -311,11 +369,13 @@ public class AES {
 
     public static void main(String[] args) {
         byte[] key = {0x0f, 0x15, 0x71, (byte) 0xc9, 0x47, (byte) 0xd9, (byte) 0xe8, 0x59, 0x0c, (byte) 0xb7, (byte) 0xad, (byte) 0xd6, (byte) 0xaf, 0x7f, 0x67, (byte) 0x98};
-        byte[] message = {0x01, 0x23, 0x45, 0x67, (byte) 0x89, (byte) 0xab, (byte) 0xcd, (byte) 0xef, (byte) 0xfe, (byte) 0xdc, (byte) 0xba, (byte) 0x98, 0x76, 0x54, 0x32, 0x10};
+        byte[] message = {0x01, 0x23, 0x45, 0x67, (byte) 0x89, (byte) 0xab, (byte) 0xcd, (byte) 0xef, (byte) 0xfe, (byte) 0xdc, (byte) 0xba, (byte) 0x98, 0x76, 0x54, 0x32, 0x10,
+                0x01, 0x23, 0x45, (byte) 0x89, (byte) 0xab, (byte) 0xcd, (byte) 0xef, (byte) 0xfe, (byte) 0xdc, (byte) 0xba, (byte) 0x98, 0x76, 0x54, 0x32, 0x10};
         byte[] cipher = {(byte) 0xff, 0x0b, (byte) 0x84, 0x4a, 0x08, 0x53, (byte) 0xbf, 0x7c, 0x69, 0x34, (byte) 0xab, 0x43, 0x64, 0x14, (byte) 0x8f, (byte) 0xb9};
-        AES test = new AES(message, key, "encrypt");
-        printByteArray(test.getResult());
-        AES test1 = new AES(cipher, key, "decrypt");
-        printByteArray(test1.getResult());
+        AES test = new AES(key);
+        printByteArray(test.encrypt(message));
+        printByteArray(test.decrypt(test.encrypt(message)));
+        System.out.println(test.decrypt(test.encrypt(message)).length);
+        System.out.println(message.length);
     }
 }

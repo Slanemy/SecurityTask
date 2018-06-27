@@ -127,33 +127,14 @@ public class DES {
 
     private byte[][] keySub;    //子密钥
 
-    private byte[] result;      //输出的结果，加密后密文或解密后明文
-
-    /**
-     * 外部函数入口
-     *
-     * @return 加密或解密的结果
-     */
-    public byte[] getResult() {
-        return result;
-    }
 
     /**
      * 构造函数
      *
-     * @param input 输入的64bits明文
-     * @param key   64bits密钥
-     * @param mode  选择加密或解密
+     * @param key 64bits密钥
      */
-    public DES(byte[] input, byte[] key, String mode) {
+    public DES(byte[] key) {
         keySub = keyGen(key);
-        if (mode.equals("encrypt")) {
-            result = encrypt(input);
-        } else if (mode.equals("decrypt")) {
-            result = decrypt(input);
-        } else {
-            System.out.println("Please re-input DES mode.");
-        }
     }
 
     /**
@@ -162,7 +143,7 @@ public class DES {
      * @param input 待加密64bits明文
      * @return 64bits密文
      */
-    private byte[] encrypt(byte[] input) {
+    private byte[] encryptCore(byte[] input) {
 
         byte[] M0 = IPSubstitute(input);
 
@@ -175,12 +156,53 @@ public class DES {
     }
 
     /**
+     * 采用PKCS7Padding填充方式
+     *
+     * @param input
+     * @return
+     */
+    public byte[] encrypt(byte[] input) {
+        int partLen = 8;
+        int len = input.length;
+        int number = (int) Math.ceil((double) len / partLen);
+        int mod = len % partLen;
+
+        byte[] output;
+        byte[] tempInput;
+        if (mod == 0) {
+            tempInput = new byte[number * partLen + 8];
+            System.arraycopy(input, 0, tempInput, 0, len);
+            for (int i = 0; i < partLen; i++) {
+                tempInput[len + i] = (byte) partLen;
+            }
+            output = new byte[number * partLen + partLen];
+        } else {
+            tempInput = new byte[number * partLen];
+            System.arraycopy(input, 0, tempInput, 0, len);
+            for (int i = 0; i < partLen - mod; i++) {
+                tempInput[len + i] = (byte) (partLen - mod);
+            }
+            output = new byte[number * partLen];
+        }
+
+        for (int i = 0; i < (output.length / partLen); i++) {
+            byte[] temp = new byte[partLen];
+            System.arraycopy(tempInput, i * partLen, temp, 0, partLen);
+            System.arraycopy(encryptCore(temp), 0, output, i * partLen, partLen);
+        }
+
+
+        return output;
+    }
+
+
+    /**
      * DES解密过程
      *
      * @param input 待解密64bits密文
      * @return 64bits明文
      */
-    private byte[] decrypt(byte[] input) {
+    public byte[] decryptCore(byte[] input) {
 
         byte[] C0 = IPSubstitute(input);
 
@@ -191,6 +213,31 @@ public class DES {
         byte[] M = IPInvSubstitute(iterResult);
 
         return M;
+    }
+
+    public byte[] decrypt(byte[] input) {
+        int len = input.length;
+        int partLen = 8;
+        int number = len / partLen;
+
+
+        byte[] tempOutput = new byte[len];
+        byte[] output;
+
+        for (int i = 0; i < number; i++) {
+            byte[] temp = new byte[partLen];
+            System.arraycopy(input, i * partLen, temp, 0, partLen);
+            System.arraycopy(decryptCore(temp), 0, tempOutput, i * partLen, partLen);
+        }
+        if (tempOutput[len - 1] == 0x08) {
+            output = new byte[len - partLen];
+            System.arraycopy(tempOutput, 0, output, 0, len - partLen);
+        } else {
+            int x = tempOutput[len - 1];
+            output = new byte[len - x];
+            System.arraycopy(tempOutput, 0, output, 0, len - x);
+        }
+        return output;
     }
 
     /**
@@ -208,7 +255,7 @@ public class DES {
     /**
      * 主迭代过程，包括分成左右各32bits，再进行16轮Feistel迭代
      *
-     * @param M0 输入的IP置换后的64bits数据
+     * @param M0    输入的IP置换后的64bits数据
      * @param key48 子密钥
      * @return 64bits迭代结果
      */
@@ -242,8 +289,9 @@ public class DES {
 
     /**
      * Feistel函数，先将32bits扩展成48bits，再与子密钥异或，再通过S盒，最后进行P置换
+     *
      * @param input 输入当前轮右边32bits
-     * @param key 当前轮子密钥
+     * @param key   当前轮子密钥
      * @return
      */
     private byte[] feistel(byte[] input, byte[] key) {
@@ -276,6 +324,7 @@ public class DES {
 
     /**
      * 将32bits扩展置换成48bits
+     *
      * @param input 32bits输入
      * @return 48bits输出
      */
@@ -300,6 +349,7 @@ public class DES {
 
     /**
      * P置换
+     *
      * @param input 32bits输入
      * @return 32bit输出
      */
@@ -326,6 +376,7 @@ public class DES {
 
     /**
      * 生成16轮子密钥，先将密钥压缩为56位，再通过分组移位等操作生成16组48位子密钥
+     *
      * @param key 用户输入密钥
      * @return 16轮子密钥
      */
@@ -365,7 +416,8 @@ public class DES {
 
     /**
      * 28bits数据循环左移函数
-     * @param input 28bits
+     *
+     * @param input  28bits
      * @param offset 移动位数
      * @return
      */
@@ -385,6 +437,7 @@ public class DES {
 
     /**
      * PC1密钥压缩
+     *
      * @param key 64bits
      * @return 56bits
      */
@@ -396,6 +449,7 @@ public class DES {
 
     /**
      * PC2密钥压缩
+     *
      * @param key 56bits
      * @return 48bits
      */
@@ -407,8 +461,9 @@ public class DES {
 
     /**
      * IP、IP逆、PC1、PC2等置换主过程
+     *
      * @param output 置换后的结果
-     * @param input 待置换数据
+     * @param input  待置换数据
      * @param subArr 置换矩阵
      */
     private void byteSubstitute(byte[] output, byte[] input, int[] subArr) {
@@ -426,8 +481,9 @@ public class DES {
 
     /**
      * 字节数组拆分每一位为一个字节数组元素
+     *
      * @param output 输出的“位”数组
-     * @param input 输入的字节数组
+     * @param input  输入的字节数组
      */
     private static void byte2Bit(byte[] output, byte[] input) {
         for (int i = 0; i < output.length; i++) {
@@ -437,8 +493,9 @@ public class DES {
 
     /**
      * “位”数组合成字节数组
+     *
      * @param output 输出的字节数组
-     * @param input 输入的“位”数组
+     * @param input  输入的“位”数组
      */
     private static void bit2Byte(byte[] output, byte[] input) {
         for (int i = 0; i < output.length; i++) {
@@ -455,17 +512,18 @@ public class DES {
 
     /**
      * 解密过程中的密钥置换
+     *
      * @param key48 16轮子密钥
      * @return 置换后的16轮子密钥
      */
     private byte[][] keyInv(byte[][] key48) {
         byte[] tmp = new byte[6];
+        byte[][] keyOut = new byte[16][6];
         for (int i = 0; i < 8; i++) {
-            System.arraycopy(key48[i], 0, tmp, 0, 6);
-            System.arraycopy(key48[15 - i], 0, key48[i], 0, 6);
-            System.arraycopy(tmp, 0, key48[15 - i], 0, 6);
+            System.arraycopy(key48[i], 0, keyOut[15-i], 0, 6);
+            System.arraycopy(key48[15 - i], 0, keyOut[i], 0, 6);
         }
-        return key48;
+        return keyOut;
     }
 
     public static void printByteArray(byte[] input) {
@@ -479,6 +537,7 @@ public class DES {
     public static void main(String[] args) {
         byte[] M = {
                 0x01, 0x23, 0x45, 0x67,
+                (byte) 0xab, (byte) 0xcd, (byte) 0xef, 0x23, 0x45, 0x67,
                 (byte) 0x89, (byte) 0xab, (byte) 0xcd, (byte) 0xef
         };
 
@@ -487,15 +546,15 @@ public class DES {
                 0x13, 0x34, 0x57, 0x79,
                 (byte) 0x9b, (byte) 0xbc, (byte) 0xdf, (byte) 0xf1
         };
-        DES des = new DES(M, key, "encrypt");
+        DES des = new DES(key);
 
-        byte[] C = des.getResult();
 
+        byte[] C = des.encrypt(M);
         printByteArray(C);
 
-        DES edes = new DES(C, key, "decrypt");
+        byte[] MM = des.decrypt(C);
+        printByteArray(MM);
 
-        printByteArray(edes.getResult());
 
 
     }
