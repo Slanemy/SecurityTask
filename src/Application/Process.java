@@ -37,19 +37,12 @@ public class Process {
 
     public void initialize(String symAlg, String symKeyType, String seed, String hashAlg, String RSABitLength) {
         this.hashAlg = hashAlg;
-        this.RSABitLength = Integer.valueOf(RSABitLength);
+        this.RSABitLength = Integer.parseInt(RSABitLength);
         if (!seed.equals("")) {
-            this.seedLength = Integer.valueOf(seed);
+            this.seedLength = Integer.parseInt(seed);
         }
         this.symKeyType = symKeyType;
         this.symAlg = symAlg;
-    }
-
-    private static void printByteArray(byte[] input) {
-        for (int i = 0; i < input.length; i++) {
-            System.out.print(Integer.toHexString(input[i] & 0xff) + " ");
-        }
-        System.out.println();
     }
 
     private static String bytes2String(byte[] input) {

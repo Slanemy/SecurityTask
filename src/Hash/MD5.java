@@ -1,10 +1,5 @@
 package Hash;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-
 public class MD5 {
     //四个32位变量初始值
     private long A = 0x67452301L;
@@ -131,13 +126,6 @@ public class MD5 {
         md5Final();
 
         return digest;
-    }
-
-    private static void printByteArray(byte[] input) {
-        for (int i = 0; i < input.length; i++) {
-            System.out.print(Integer.toHexString(input[i] & 0xff) + " ");
-        }
-        System.out.println();
     }
 
     /**
@@ -368,23 +356,6 @@ public class MD5 {
         }
     }
 
-
-    /**
-     * @param args
-     */
-    public static void main(String[] args) throws Exception {
-        String data = "a大的";
-        byte[] test = data.getBytes();
-        MD5 md5 = new MD5();
-        printByteArray(md5.getMD5Str(test));
-
-
-
-        MessageDigest mdInst = MessageDigest.getInstance("MD5");
-        mdInst.update(test);
-        printByteArray(mdInst.digest());
-
-    }
 
 
 }

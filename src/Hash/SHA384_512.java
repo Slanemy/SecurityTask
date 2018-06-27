@@ -1,8 +1,6 @@
 package Hash;
 
 import java.math.BigInteger;
-import java.security.MessageDigest;
-
 
 public class SHA384_512 {
 
@@ -208,14 +206,6 @@ public class SHA384_512 {
         }
     }
 
-    private static void printByteArray(byte[] input) {
-        for (int i = 0; i < input.length; i++) {
-            System.out.print(Integer.toHexString(input[i] & 0xff) + " ");
-        }
-        System.out.println();
-    }
-
-
     /**
      * 构造函数，初始化缓冲器，根据选择的SHA类型设置长度
      *
@@ -358,21 +348,5 @@ public class SHA384_512 {
         state[7] += h;
     }
 
-    public static void main(String[] args) throws Exception {
-        String data = "sadhioasdopi j20982093is绗缝机欧萨分红我暗示法iOSad静安寺快乐 23u90218sfkljsa山东黄金开发商低级……%#*";
-        byte[] test = data.getBytes();
-        SHA384_512 sha384 = new SHA384_512("SHA384");
-        SHA384_512 sha512 = new SHA384_512("SHA512");
-        sha384.update(test);
-        sha512.update(test);
-
-        MessageDigest ssha384 = MessageDigest.getInstance("sha-384");
-        MessageDigest ssha512 = MessageDigest.getInstance("sha-512");
-        ssha384.update(test);
-        printByteArray(sha384.getSHAStr());
-        printByteArray(ssha384.digest());
-        ssha512.update(test);
-        printByteArray(sha512.getSHAStr());
-        printByteArray(ssha512.digest());
-    }
+   
 }

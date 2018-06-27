@@ -1,7 +1,5 @@
 package SymmetricEncryption;
 
-import java.lang.reflect.Array;
-
 public class DES {
 
     //IP置换数组
@@ -370,7 +368,7 @@ public class DES {
         int bitPos = position % 8;
         int len = position / 8;
         byte re;
-        re = (byte) ((input[len] >>> (7 - bitPos) & 0x1));
+        re = (byte) ((input[len] >>> (7 - bitPos) & 0x01));
         return re;
     }
 
@@ -517,7 +515,6 @@ public class DES {
      * @return 置换后的16轮子密钥
      */
     private byte[][] keyInv(byte[][] key48) {
-        byte[] tmp = new byte[6];
         byte[][] keyOut = new byte[16][6];
         for (int i = 0; i < 8; i++) {
             System.arraycopy(key48[i], 0, keyOut[15-i], 0, 6);
@@ -525,39 +522,5 @@ public class DES {
         }
         return keyOut;
     }
-
-    public static void printByteArray(byte[] input) {
-        for (int i = 0; i < input.length; i++) {
-            System.out.print(Integer.toHexString(input[i] & 0xff) + " ");
-        }
-        System.out.println();
-    }
-
-
-    public static void main(String[] args) {
-        byte[] M = {
-                0x01, 0x23, 0x45, 0x67,
-                (byte) 0xab, (byte) 0xcd, (byte) 0xef, 0x23, 0x45, 0x67,
-                (byte) 0x89, (byte) 0xab, (byte) 0xcd, (byte) 0xef
-        };
-
-
-        byte[] key = {
-                0x13, 0x34, 0x57, 0x79,
-                (byte) 0x9b, (byte) 0xbc, (byte) 0xdf, (byte) 0xf1
-        };
-        DES des = new DES(key);
-
-
-        byte[] C = des.encrypt(M);
-        printByteArray(C);
-
-        byte[] MM = des.decrypt(C);
-        printByteArray(MM);
-
-
-
-    }
-
 
 }

@@ -1,8 +1,5 @@
 package Hash;
 
-import java.security.MessageDigest;
-
-
 public class SHA224_256 {
 
     private static final int SHA224H0[] = {
@@ -184,14 +181,6 @@ public class SHA224_256 {
         }
     }
 
-    private static void printByteArray(byte[] input) {
-        for (int i = 0; i < input.length; i++) {
-            System.out.print(Integer.toHexString(input[i] & 0xff) + " ");
-        }
-        System.out.println();
-    }
-
-
     /**
      * 构造函数，初始化缓冲器，根据选择的SHA类型设置长度
      *
@@ -332,19 +321,5 @@ public class SHA224_256 {
         state[7] += h;
     }
 
-    public static void main(String[] args) throws Exception {
-        String data = "sadhioasdopi j20982093is绗缝机欧萨分红我暗示法iOSad静安寺快乐 23u90218sfkljsa山东黄金开发商低级……%#*";
-        byte[] test = data.getBytes();
-        SHA224_256 sha224 = new SHA224_256("SHA224");
-        SHA224_256 sha256 = new SHA224_256("SHA256");
-        sha224.update(test);
-        sha256.update(test);
-        printByteArray(sha224.getSHAStr());
-        printByteArray(sha256.getSHAStr());
 
-        //MessageDigest ssha224 = MessageDigest.getInstance("sha-224");
-        MessageDigest ssha256 = MessageDigest.getInstance("sha-256");
-        ssha256.update(test);
-        printByteArray(ssha256.digest());
-    }
 }

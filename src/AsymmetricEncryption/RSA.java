@@ -159,51 +159,5 @@ public class RSA {
         System.arraycopy(temp, 0, output, 0, realLen);
         return output;
     }
-
-    private static void printByteArray(byte[] input) {
-        for (int i = 0; i < input.length; i++) {
-            System.out.print(Integer.toHexString(input[i] & 0xff) + " ");
-        }
-        System.out.println();
-    }
-
-    public static void main(String[] args) throws Exception {
-        RSA rsa = new RSA();
-        String data = "1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；1024位的证书，加密时最大支持117个字节，解密时为128；";
-        byte[] test = data.getBytes();
-        System.out.print("message:");
-        printByteArray(test);
-
-        RSAKeyPair keyPair = new RSAKeyPair(1024);
-        BigInteger[] publicKey = keyPair.getPublic();
-        BigInteger[] privateKey = keyPair.getPrivate();
-
-        int count = 0;
-        for (int i = 0; i < 20; i++) {
-            byte[] cipher = rsa.encrypt(test, publicKey, "public");
-            byte[] message = rsa.decrypt(cipher, privateKey, "public");
-
-            String M = new String(message);
-            if(M.equals(data)){
-                count++;
-            }
-        }
-
-        System.out.println(count);
-
-        count = 0;
-        for (int i = 0; i < 20; i++) {
-            byte[] cipher = rsa.encrypt(test, privateKey, "private");
-            byte[] message = rsa.decrypt(cipher, publicKey, "private");
-
-            String M = new String(message);
-            if(M.equals(data)){
-                count++;
-            }
-        }
-
-        System.out.println(count);
-
-
-    }
+ 
 }

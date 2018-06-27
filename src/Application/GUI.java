@@ -20,7 +20,6 @@ public class GUI {
     private static final int DEFAULT_POSITION_X = 0;
     private static final int DEFAULT_POSITION_Y = 0;
     private static final String ICON = "assets/icon.jpg";
-    private static final String FLOW = "assets/flow.jpg";
     private static final int OFFSET_Y = 40;
     private static final int OFFSET_X = 90;
     private static final int LINE_Y = 36;
@@ -117,14 +116,14 @@ public class GUI {
         setupPanel.add(jrbDES);
 
         jrbDES.addActionListener(new ActionListener() {
-            @Override
+        	@Override
             public void actionPerformed(ActionEvent e) {
                 symAlg = "DES";
             }
         });
 
         jrbAES.addActionListener(new ActionListener() {
-            @Override
+        	@Override
             public void actionPerformed(ActionEvent e) {
                 symAlg = "AES";
             }
@@ -383,7 +382,7 @@ public class GUI {
                             "错误", JOptionPane.ERROR_MESSAGE);
 
                 } else if (RSABITLENTH.matches("\\d+")) {
-                    if (Integer.valueOf(RSABITLENTH) < 1024 || Integer.valueOf(RSABITLENTH) > 2048) {
+                    if (Integer.parseInt(RSABITLENTH) < 1024 || Integer.parseInt(RSABITLENTH) > 2048) {
                         JOptionPane.showMessageDialog(frame, "RSA位数必须在1024到2048之间",
                                 "错误", JOptionPane.ERROR_MESSAGE);
                     } else {
@@ -518,7 +517,7 @@ public class GUI {
                 } catch (Exception err) {
                     System.out.println(err);
                 }
-                int decryptedSymKeyLen = Integer.valueOf(RSABitLength) / 8;
+                int decryptedSymKeyLen = Integer.parseInt(RSABitLength) / 8;
                 int hashLen = 0;
                 int encryptedSigLen = 0;
                 if (hashAlg.equals("MD5")) {
@@ -546,21 +545,22 @@ public class GUI {
 
                 byte[] decryptedComboBytes = mainProcess.getComboBytes(encryptedComboBytes, decryptedSymKey);
 
-                if (hashLen < ((Integer.valueOf(RSABitLength) / 8) - 3)) {
-                    encryptedSigLen = Integer.valueOf(RSABitLength) / 8;
+                if (hashLen < ((Integer.parseInt(RSABitLength) / 8) - 3)) {
+                    encryptedSigLen = Integer.parseInt(RSABitLength) / 8;
                 } else {
-                    encryptedSigLen = Integer.valueOf(RSABitLength) / 8 * 2;
+                    encryptedSigLen = Integer.parseInt(RSABitLength) / 8 * 2;
                 }
                 int messageLen = decryptedComboBytes.length - encryptedSigLen;
-                byte[] decryptedMessage = new byte[messageLen];
+                byte[] decryptedMessageBytes = new byte[messageLen];
                 byte[] encryptedSigBytes = new byte[encryptedSigLen];
-                System.arraycopy(decryptedComboBytes, 0, decryptedMessage, 0, messageLen);
+                System.arraycopy(decryptedComboBytes, 0, decryptedMessageBytes, 0, messageLen);
                 System.arraycopy(decryptedComboBytes, messageLen, encryptedSigBytes, 0, encryptedSigLen);
                 byte[] decryptedSigBytes = mainProcess.getEncryptedSig(encryptedSigBytes);
 
+                String decryptedMessage = new String(decryptedMessageBytes);
                 jtaB.append("解密得" + hashAlg + "：" + bytes2String(decryptedSigBytes) + "\n");
-                jtaB.append("解密得消息：" + bytes2String(decryptedMessage) + "\n");
-                byte[] hashBytes = mainProcess.getHash(decryptedMessage);
+                jtaB.append("解密得消息：" + decryptedMessage + "\n");
+                byte[] hashBytes = mainProcess.getHash(decryptedMessageBytes);
                 jtaB.append("用A公钥计算解密后消息的" + hashAlg + "：" + bytes2String(hashBytes) + "\n");
                 jtaB.append("-----------------------------------------------------------------------------------------------------------------------------\n");
 
